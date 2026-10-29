@@ -1,15 +1,35 @@
+# Android Studio 및 IntelliJ 로컬 파일
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
+/.idea/caches/
+/.idea/libraries/
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+
+# Gradle 및 Kotlin 생성 파일
+/.gradle/
+/.gradle-codex/
+/.kotlin/
+**/build/
+
+# 개발자별 Android SDK 설정
+/local.properties
+
+# 네이티브 빌드 및 캡처 결과
+/.externalNativeBuild/
+/.cxx/
+/captures/
+
+# 서명키와 로컬 비밀 설정
+*.jks
+*.keystore
+keystore.properties
+
+# 임시 파일과 운영체제 메타데이터
+/tmp/
+*.hprof
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+Thumbs.db
