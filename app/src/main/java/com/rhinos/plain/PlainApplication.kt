@@ -5,8 +5,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.rhinos.plain.data.local.PlainDatabase
+import com.rhinos.plain.data.identity.FirebaseVehicleIdentityProvider
 import com.rhinos.plain.data.repository.RoomCalendarRepository
+import com.rhinos.plain.domain.identity.VehicleIdentityProvider
 import com.rhinos.plain.domain.repository.CalendarRepository
+import com.google.firebase.auth.FirebaseAuth
 
 /**
  * 애플리케이션 수명 동안 데이터베이스와 저장소 인스턴스를 소유합니다.
@@ -15,6 +18,11 @@ import com.rhinos.plain.domain.repository.CalendarRepository
  * 사용합니다. 프로세스가 종료되면 Room이 데이터베이스 자원을 정리합니다.
  */
 class PlainApplication : Application() {
+    /** 로그인 화면 없이 차량을 식별하는 Firebase 기반 공급자입니다. */
+    val vehicleIdentityProvider: VehicleIdentityProvider by lazy {
+        FirebaseVehicleIdentityProvider(FirebaseAuth.getInstance())
+    }
+
     val calendarRepository: CalendarRepository by lazy {
         val database = Room.databaseBuilder(
             applicationContext,
@@ -26,6 +34,12 @@ class PlainApplication : Application() {
             eventDao = database.calendarEventDao(),
             tagDao = database.scheduleTagDao(),
         )
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        // 인증 실패가 로컬 Room 일정 사용을 막지 않도록 비동기로 별도 초기화합니다.
+        vehicleIdentityProvider.initialize()
     }
 
     private class InitialTagCallback : RoomDatabase.Callback() {
