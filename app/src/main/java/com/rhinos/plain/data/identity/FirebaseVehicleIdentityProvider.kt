@@ -1,5 +1,6 @@
 package com.rhinos.plain.data.identity
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.rhinos.plain.domain.identity.VehicleIdentityProvider
 import com.rhinos.plain.domain.identity.VehicleIdentityState
@@ -27,6 +28,7 @@ class FirebaseVehicleIdentityProvider(
     override fun initialize() {
         firebaseAuth.currentUser?.uid?.let { savedUid ->
             mutableState.value = VehicleIdentityState.Ready(savedUid)
+            Log.i(TAG, "저장된 차량 익명 인증을 복원했습니다.")
             return
         }
 
@@ -35,15 +37,21 @@ class FirebaseVehicleIdentityProvider(
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid
                 mutableState.value = if (uid != null) {
+                    Log.i(TAG, "차량 익명 인증을 생성했습니다.")
                     VehicleIdentityState.Ready(uid)
                 } else {
                     VehicleIdentityState.Error("차량 식별자를 확인할 수 없습니다.")
                 }
             }
-            .addOnFailureListener {
+            .addOnFailureListener { error ->
+                Log.e(TAG, "차량 익명 인증에 실패했습니다.", error)
                 mutableState.value = VehicleIdentityState.Error(
                     "차량 인증에 실패했습니다. 네트워크 연결을 확인해 주세요.",
                 )
             }
+    }
+
+    private companion object {
+        const val TAG = "PlainVehicleIdentity"
     }
 }

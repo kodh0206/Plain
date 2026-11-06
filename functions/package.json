@@ -1,0 +1,25 @@
+{
+  "name": "plain-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "node -e \"require('fs').rmSync('lib', { recursive: true, force: true })\"",
+    "test": "npm run test:unit",
+    "test:unit": "npm run build && node --test lib/test/unit/**/*.test.js",
+    "test:emulator:run": "node --test lib/test/emulator/**/*.test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "firebase": "^12.4.0",
+    "firebase-tools": "^14.20.0",
+    "typescript": "^5.9.3"
+  }
+}

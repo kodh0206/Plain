@@ -15,6 +15,15 @@
 /.kotlin/
 **/build/
 
+# Firebase Functions 및 Emulator 생성 파일
+functions/node_modules/
+functions/lib/
+functions/*.log
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
 # 개발자별 Android SDK 설정
 /local.properties
 

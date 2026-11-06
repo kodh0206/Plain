@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 일정 데이터는 검증된 Cloud Functions만 Admin SDK로 접근합니다.
+    // Android 클라이언트의 Firestore 직접 읽기와 쓰기는 모두 차단합니다.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
