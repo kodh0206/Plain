@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.plain"
+    namespace = "com.rhinos.plain"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.plain"
+        applicationId = "com.rhinos.plain"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

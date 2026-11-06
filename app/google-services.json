@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "168452541385",
+    "project_id": "plain-b06c3",
+    "storage_bucket": "plain-b06c3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:168452541385:android:aa8fea86543cd16143f618",
+        "android_client_info": {
+          "package_name": "com.rhinos.plain"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDowb9RJrDc7vLv7jQjzpA7B-geUCRGdiA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
