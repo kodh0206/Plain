@@ -2,40 +2,61 @@ import assert from "node:assert/strict";
 import {describe, it} from "node:test";
 import {HttpsError} from "firebase-functions/v2/https";
 import {
-  validateCalendarEventRange,
-  validateCreateCalendarEvent,
-  validateUpdateCalendarEvent,
+  validateCreateSchedule,
+  validateScheduleRange,
+  validateUpdateSchedule,
 } from "../../calendar/validation";
 
-describe("calendar validation", () => {
-  it("일정 생성 값을 정규화한다", () => {
-    const result = validateCreateCalendarEvent({
+describe("schedule validation", () => {
+  it("일정 생성 값과 위치를 정규화한다", () => {
+    const result = validateCreateSchedule({
+      requestId: "request_12345678",
       title: "  정비 예약  ",
+      description: "  정기 점검  ",
       startAtMillis: 1_800_000_000_000,
-      endAtMillis: 1_800_000_003_600,
-      location: "  서비스 센터 ",
+      endAtMillis: 1_800_003_600_000,
+      timeZoneId: "Asia/Seoul",
+      isAllDay: false,
+      location: {address: "  서울 서비스센터 ", latitude: 37.5, longitude: 127.0},
+      tags: ["1", "1"],
     });
-
     assert.equal(result.title, "정비 예약");
-    assert.equal(result.location, "서비스 센터");
-    assert.equal(result.allDay, false);
-    assert.equal(result.notes, null);
+    assert.equal(result.location?.address, "서울 서비스센터");
+    assert.deepEqual(result.tags, ["1"]);
   });
 
-  it("종료 시각이 시작 시각보다 빠른 일정을 거부한다", () => {
+  it("동일하거나 역전된 종료 시각을 거부한다", () => {
     assert.throws(
-      () => validateCreateCalendarEvent({
+      () => validateCreateSchedule({
+        requestId: "request_12345678",
         title: "잘못된 일정",
         startAtMillis: 200,
         endAtMillis: 100,
+        timeZoneId: "Asia/Seoul",
+        isAllDay: false,
       }),
       (error: unknown) => error instanceof HttpsError && error.code === "invalid-argument",
     );
   });
 
+  it("위도와 경도가 함께 없는 위치를 거부한다", () => {
+    assert.throws(
+      () => validateCreateSchedule({
+        requestId: "request_12345678",
+        title: "좌표 오류",
+        startAtMillis: 100,
+        endAtMillis: 200,
+        timeZoneId: "Asia/Seoul",
+        isAllDay: false,
+        location: {address: "서울", latitude: 37.5},
+      }),
+      HttpsError,
+    );
+  });
+
   it("366일을 넘는 조회 범위를 거부한다", () => {
     assert.throws(
-      () => validateCalendarEventRange({
+      () => validateScheduleRange({
         startAtMillis: 0,
         endAtMillis: 367 * 24 * 60 * 60 * 1_000,
       }),
@@ -45,7 +66,10 @@ describe("calendar validation", () => {
 
   it("수정할 필드가 없는 요청을 거부한다", () => {
     assert.throws(
-      () => validateUpdateCalendarEvent({eventId: "event-1"}),
+      () => validateUpdateSchedule({
+        scheduleId: "schedule_12345678",
+        expectedRevision: 1,
+      }),
       HttpsError,
     );
   });

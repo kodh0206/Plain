@@ -6,7 +6,7 @@
     "node": "22"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "clean": "node -e \"require('fs').rmSync('lib', { recursive: true, force: true })\"",
     "test": "npm run test:unit",
     "test:unit": "npm run build && node --test lib/test/unit/**/*.test.js",

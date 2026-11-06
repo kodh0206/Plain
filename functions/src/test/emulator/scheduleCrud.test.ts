@@ -19,13 +19,14 @@ const otherVehicleApp = initializeApp({
   apiKey: "plain-local-api-key",
   appId: "1:1234567890:web:plain-local-other-vehicle",
 }, "other-vehicle");
+
 const auth = getAuth(app);
 const functions = getFunctions(app, "asia-northeast3");
 const unauthenticatedFunctions = getFunctions(unauthenticatedApp, "asia-northeast3");
 const otherVehicleAuth = getAuth(otherVehicleApp);
 const otherVehicleFunctions = getFunctions(otherVehicleApp, "asia-northeast3");
 
-describe("calendar callable functions", () => {
+describe("schedule callable functions", () => {
   before(async () => {
     connectAuthEmulator(auth, "http://127.0.0.1:9099", {disableWarnings: true});
     connectFunctionsEmulator(functions, "127.0.0.1", 5001);
@@ -43,61 +44,72 @@ describe("calendar callable functions", () => {
   });
 
   it("미인증 요청을 거부한다", async () => {
-    const list = httpsCallable(unauthenticatedFunctions, "getCalendarEvents");
+    const list = httpsCallable(unauthenticatedFunctions, "getSchedules");
     await assert.rejects(
       () => list({startAtMillis: 0, endAtMillis: 1_000}),
-      (error: unknown) =>
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        error.code === "functions/unauthenticated",
+      (error: unknown) => typeof error === "object" && error !== null &&
+        "code" in error && error.code === "functions/unauthenticated",
     );
   });
 
-  it("인증된 차량이 일정을 생성·조회·수정·삭제한다", async () => {
+  it("생성 재시도 중복을 막고 차량 격리·조회·수정·삭제·충돌을 처리한다", async () => {
     const now = Date.now();
-    const create = httpsCallable(functions, "createCalendarEvent");
-    const list = httpsCallable(functions, "getCalendarEvents");
-    const update = httpsCallable(functions, "updateCalendarEvent");
-    const remove = httpsCallable(functions, "deleteCalendarEvent");
-
-    const created = (await create({
+    const requestId = `request_${now}`;
+    const create = httpsCallable(functions, "createSchedule");
+    const list = httpsCallable(functions, "getSchedules");
+    const get = httpsCallable(functions, "getSchedule");
+    const update = httpsCallable(functions, "updateSchedule");
+    const remove = httpsCallable(functions, "deleteSchedule");
+    const createInput = {
+      requestId,
       title: "PLEOS 점검",
+      description: "정기 점검 일정",
       startAtMillis: now + 60_000,
       endAtMillis: now + 3_660_000,
-      allDay: false,
-      location: "서울 서비스 센터",
-    })).data as {id: string; title: string};
-    assert.ok(created.id);
-    assert.equal(created.title, "PLEOS 점검");
+      timeZoneId: "Asia/Seoul",
+      isAllDay: false,
+      location: {address: "서울 서비스센터", latitude: 37.5, longitude: 127.0},
+      tags: ["tag_work_01"],
+    };
 
-    const otherVehicleList = httpsCallable(otherVehicleFunctions, "getCalendarEvents");
-    const isolated = (await otherVehicleList({
+    const created = (await create(createInput)).data as {id: string; revision: number};
+    const retried = (await create(createInput)).data as {id: string; revision: number};
+    assert.equal(retried.id, created.id);
+    assert.equal(retried.revision, 1);
+
+    const isolated = (await httpsCallable(otherVehicleFunctions, "getSchedules")({
       startAtMillis: now,
       endAtMillis: now + 86_400_000,
-    })).data as {events: unknown[]};
-    assert.equal(isolated.events.length, 0);
+    })).data as {schedules: unknown[]};
+    assert.equal(isolated.schedules.length, 0);
+
+    const fetched = (await get({scheduleId: created.id})).data as {title: string};
+    assert.equal(fetched.title, "PLEOS 점검");
 
     const listed = (await list({
       startAtMillis: now,
       endAtMillis: now + 86_400_000,
-    })).data as {events: Array<{id: string; title: string}>};
-    assert.equal(listed.events.length, 1);
-    assert.equal(listed.events[0].id, created.id);
+    })).data as {schedules: Array<{id: string}>};
+    assert.equal(listed.schedules.length, 1);
 
     const updated = (await update({
-      eventId: created.id,
+      scheduleId: created.id,
+      expectedRevision: 1,
       title: "PLEOS 정기 점검",
-    })).data as {title: string};
+    })).data as {title: string; revision: number};
     assert.equal(updated.title, "PLEOS 정기 점검");
+    assert.equal(updated.revision, 2);
 
-    const deleted = (await remove({eventId: created.id})).data as {deleted: boolean};
+    await assert.rejects(
+      () => update({scheduleId: created.id, expectedRevision: 1, title: "오래된 수정"}),
+      (error: unknown) => typeof error === "object" && error !== null &&
+        "code" in error && error.code === "functions/aborted",
+    );
+
+    const deleted = (await remove({
+      scheduleId: created.id,
+      expectedRevision: 2,
+    })).data as {deleted: boolean};
     assert.equal(deleted.deleted, true);
-
-    const empty = (await list({
-      startAtMillis: now,
-      endAtMillis: now + 86_400_000,
-    })).data as {events: unknown[]};
-    assert.equal(empty.events.length, 0);
   });
 });

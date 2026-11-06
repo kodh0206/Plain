@@ -27,6 +27,13 @@ class MainActivity : ComponentActivity() {
                     onPreviousMonth = calendarViewModel::showPreviousMonth,
                     onNextMonth = calendarViewModel::showNextMonth,
                     onDateSelected = calendarViewModel::selectDate,
+                    onRetry = calendarViewModel::retryLoad,
+                    onAddEvent = calendarViewModel::openCreateEditor,
+                    onEventSelected = calendarViewModel::openEditEditor,
+                    onEditorChanged = calendarViewModel::updateEditor,
+                    onSaveEvent = calendarViewModel::saveEditor,
+                    onDeleteEvent = calendarViewModel::deleteEditingEvent,
+                    onCloseEditor = calendarViewModel::closeEditor,
                 )
             }
         }

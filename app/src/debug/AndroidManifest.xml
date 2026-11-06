@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Firebase 로컬 에뮬레이터는 HTTP를 사용하므로 디버그 빌드에서만 허용한다. -->
+    <application android:usesCleartextTraffic="true" />
+
+</manifest>

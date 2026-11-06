@@ -6,7 +6,7 @@ package com.rhinos.plain.domain.model
  * [colorArgb]는 플랫폼 UI 타입에 의존하지 않도록 ARGB 정수로 보관합니다.
  */
 data class ScheduleTag(
-    val id: Long = 0,
+    val id: String = "",
     val name: String,
     val colorArgb: Long,
 )

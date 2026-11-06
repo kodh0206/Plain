@@ -6,10 +6,12 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.rhinos.plain.data.local.PlainDatabase
 import com.rhinos.plain.data.identity.FirebaseVehicleIdentityProvider
-import com.rhinos.plain.data.repository.RoomCalendarRepository
+import com.rhinos.plain.data.remote.FirebaseCalendarRemoteDataSource
+import com.rhinos.plain.data.repository.FirebaseCalendarRepository
 import com.rhinos.plain.domain.identity.VehicleIdentityProvider
 import com.rhinos.plain.domain.repository.CalendarRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.functions.FirebaseFunctions
 
 /**
  * 애플리케이션 수명 동안 데이터베이스와 저장소 인스턴스를 소유합니다.
@@ -18,9 +20,21 @@ import com.google.firebase.auth.FirebaseAuth
  * 사용합니다. 프로세스가 종료되면 Room이 데이터베이스 자원을 정리합니다.
  */
 class PlainApplication : Application() {
+    private val firebaseAuth: FirebaseAuth by lazy {
+        FirebaseAuth.getInstance().apply {
+            if (BuildConfig.USE_FIREBASE_EMULATORS) useEmulator(EMULATOR_HOST, AUTH_EMULATOR_PORT)
+        }
+    }
+
+    private val firebaseFunctions: FirebaseFunctions by lazy {
+        FirebaseFunctions.getInstance(FUNCTIONS_REGION).apply {
+            if (BuildConfig.USE_FIREBASE_EMULATORS) useEmulator(EMULATOR_HOST, FUNCTIONS_EMULATOR_PORT)
+        }
+    }
+
     /** 로그인 화면 없이 차량을 식별하는 Firebase 기반 공급자입니다. */
     val vehicleIdentityProvider: VehicleIdentityProvider by lazy {
-        FirebaseVehicleIdentityProvider(FirebaseAuth.getInstance())
+        FirebaseVehicleIdentityProvider(firebaseAuth)
     }
 
     val calendarRepository: CalendarRepository by lazy {
@@ -30,8 +44,11 @@ class PlainApplication : Application() {
             DATABASE_NAME,
         ).addCallback(InitialTagCallback()).build()
 
-        RoomCalendarRepository(
-            eventDao = database.calendarEventDao(),
+        FirebaseCalendarRepository(
+            remoteDataSource = FirebaseCalendarRemoteDataSource(
+                firebaseAuth = firebaseAuth,
+                functions = firebaseFunctions,
+            ),
             tagDao = database.scheduleTagDao(),
         )
     }
@@ -59,5 +76,9 @@ class PlainApplication : Application() {
 
     private companion object {
         const val DATABASE_NAME = "plain.db"
+        const val EMULATOR_HOST = "10.0.2.2"
+        const val AUTH_EMULATOR_PORT = 9099
+        const val FUNCTIONS_EMULATOR_PORT = 5001
+        const val FUNCTIONS_REGION = "asia-northeast3"
     }
 }
